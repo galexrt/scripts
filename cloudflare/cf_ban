@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# dependencies: curl
+
+# example usage: cf_ban 192.168.0.1
+
+# append cloudflare email address and API token:
+CF_API_KEY="${CF_API_KEY:-}"
+CF_API_EMAIL="${CF_API_EMAIL:-}"
+
+if [ -z ${CF_API_KEY+x} ]; then
+    echo "env var CF_API_KEY not set"
+    exit 1
+fi
+if [ -z ${CF_API_EMAIL+x} ]; then
+    echo "env var CF_API_EMAIL not set"
+    exit 1
+fi
+
+curl -sSX POST "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules" \
+    -H "X-Auth-Email: $CF_API_EMAIL" \
+    -H "X-Auth-Key: $CF_API_KEY" \
+    -H "Content-Type: application/json" \
+    --data "{\"mode\":\"block\",\"configuration\":{\"target\":\"ip\",\"value\":\"$1\"},\"notes\":\"Blocked via cf_ban script\"}"

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# dependencies: curl, jq (https://stedolan.github.io/jq/)
+
+# example usage: cf_unban 192.168.0.1
+
+# append cloudflare email address and API token:
+CF_API_KEY="${CF_API_KEY:-}"
+CF_API_EMAIL="${CF_API_EMAIL:-}"
+
+if [ -z ${CF_API_KEY+x} ]; then
+    echo "env var CF_API_KEY not set"
+    exit 1
+fi
+if [ -z ${CF_API_EMAIL+x} ]; then
+    echo "env var CF_API_EMAIL not set"
+    exit 1
+fi
+
+# get the rule ID
+JSON=$(curl -sS \
+    -X GET \
+    -H "X-Auth-Email: $CF_API_EMAIL" \
+    -H "X-Auth-Key: $CF_API_KEY" \
+    -H "Content-Type: application/json" \
+    "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules?mode=block&configuration_target=ip&configuration_value=$1")
+
+ID=$(echo "$JSON" | jq -r '.result[].id')
+
+# unban IP by deleting the rule
+curl \
+    -sS \
+    -X DELETE \
+    -H "X-Auth-Email: $CF_API_EMAIL" \
+    -H "X-Auth-Key: $CF_API_KEY" \
+    -H "Content-Type: application/json" \
+    "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules/$ID"
